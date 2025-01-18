@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Header } from './components/Header';
 import { ChatForm } from './components/ChatForm';
 import { ResponseColumn } from './components/ResponseColumn';
@@ -19,8 +19,13 @@ export default function App() {
         setResponses(prev => prev.map(r => ({ ...r, loading: true, error: undefined })));
 
         try {
-            const newResponses = await sendChatRequest(prompt, image);
-            setResponses(newResponses);
+            const apiResponses = await sendChatRequest(prompt, image);
+            setResponses(apiResponses.map(r => ({
+                model: r.model,
+                response: r.response,
+                error: r.error,
+                loading: false
+            })));
         } catch (error) {
             if (isAxiosError(error)) {
                 setResponses(prev => prev.map(r => ({

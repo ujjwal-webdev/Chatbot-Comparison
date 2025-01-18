@@ -1,19 +1,16 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
       colors: {
         'srh-blue': '#003087',
-        'srh-blue-light': '#0047AB',
+        'srh-blue-light': '#004db3',
         'srh-orange': '#FF5F00',
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-  ],
-};
+  plugins: [],
+}
