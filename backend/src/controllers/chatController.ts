@@ -49,7 +49,7 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                     }
 
                     const completion = await openai.chat.completions.create({
-                        model: mediaFile ? 'gpt-4o' : 'gpt-4-vision-preview',
+                        model: mediaFile ? 'gpt-4o' : 'gpt-4o',
                         messages,
                         max_tokens: 4096
                     });
@@ -64,7 +64,7 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
             // Gemini
             (async () => {
                 try {
-                    const model = genAI.getGenerativeModel({ model: mediaFile ? 'gemini-1.5-flash' : 'gemini-pro-vision' });
+                    const model = genAI.getGenerativeModel({ model: mediaFile ? 'gemini-1.5-flash' : 'gemini-1.5-flash' });
                     
                     let result;
                     if (mediaFile) {
