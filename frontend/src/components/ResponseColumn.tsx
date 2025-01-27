@@ -30,7 +30,7 @@ export const ResponseColumn: React.FC<ResponseColumnProps> = ({ data }) => {
             </div>
 
             {/* Content */}
-            <div className="p-4 min-h-[200px] relative">
+            <div className="p-4 min-h-[200px] relative overflow-y-auto">
                 {data.loading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
                         <Loader2 className="w-8 h-8 text-srh-blue animate-spin" />
@@ -41,7 +41,7 @@ export const ResponseColumn: React.FC<ResponseColumnProps> = ({ data }) => {
                         <p className="text-sm">{data.error}</p>
                     </div>
                 ) : (
-                    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-a:text-srh-blue">
+                    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-a:text-srh-blue overflow-x-auto">
                         {data.response ? (
                             <ReactMarkdown>{data.response}</ReactMarkdown>
                         ) : (
