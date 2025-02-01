@@ -3,6 +3,7 @@ import type { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import chatRoutes from './routes/chatRoutes';
+import { initializeAIClients } from './config/ai.config';
 
 dotenv.config();
 
@@ -21,6 +22,19 @@ app.get('/health', (_req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-}); 
+async function startServer() {
+    try {
+        console.log("🔄 Initializing AI clients...");
+        await initializeAIClients(); // Ensure API clients are ready before starting the server
+        console.log("✅ AI clients initialized. Starting server...");
+
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error("❌ Failed to initialize AI clients:", error);
+        process.exit(1); // Exit process if initialization fails
+    }
+}
+
+startServer();

@@ -1,54 +1,31 @@
-# Build stage
-FROM node:20-alpine AS builder
+# First stage: Build TypeScript inside a Node.js container
+FROM --platform=linux/amd64 node:18-bullseye AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package.json and package-lock.json first (leveraging Docker layer caching)
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
-# Copy source code
+# Copy the rest of the application code
 COPY . .
 
-# Build TypeScript
+# Compile TypeScript
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine
-
-# Set node environment to production
-ENV NODE_ENV production
+# Second stage: Use a minimal runtime environment
+FROM --platform=linux/amd64 node:18-bullseye
 
 WORKDIR /app
 
-# Create a non-root user
-RUN addgroup -S nodejs && adduser -S nodejs -G nodejs
+# Copy only built files and production dependencies from the builder stage
+COPY --from=builder /app/dist /app/dist
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/package.json /app/package.json
 
-# Copy package files
-COPY package*.json ./
+# Expose the application port
+EXPOSE 3000
 
-# Install production dependencies only
-RUN npm ci --only=production
-
-# Copy built assets from builder stage
-COPY --from=builder /app/dist ./dist
-
-# Give ownership to nodejs user
-RUN chown -R nodejs:nodejs /app
-
-# Switch to non-root user
-USER nodejs
-
-# Set default port (can be overridden via environment variable)
-ENV PORT=8080
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
-
-# Start the server
-CMD ["npm", "start"]
-
+CMD ["node", "dist/index.js"]
