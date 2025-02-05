@@ -15,7 +15,7 @@ const client = new SecretManagerServiceClient();
 async function getSecret(secretName: string): Promise<string> {
     try {
         const [version] = await client.accessSecretVersion({
-            name: `projects/ai-model-comparison-20250131/secrets/${secretName}/versions/latest`,
+            name: `projects/subman-450016/secrets/${secretName}/versions/latest`,
         });
         return version.payload?.data?.toString() || '';
     } catch (error) {
