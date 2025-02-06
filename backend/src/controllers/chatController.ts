@@ -4,6 +4,7 @@ import { ChatCompletionContentPart, ChatCompletionMessageParam } from 'openai/re
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages';
 import fs from 'fs';
 import multer from 'multer';
+// import sharp from 'sharp';
 
 interface ChatRequest extends Request {
     file?: Express.Multer.File;
@@ -23,6 +24,13 @@ const storage = multer.diskStorage({
         cb(null, `${Date.now()}-${file.originalname}`);
     }
 })
+
+// async function resizeImage(imagePath: string): Promise<Buffer> {
+//     return await sharp(imagePath)
+//         .resize({ width: 512 })  // Resize width to 80px while keeping aspect ratio
+//         .jpeg({ quality: 80 })   // Convert to JPEG with 80% quality
+//         .toBuffer();
+// }
 
 export const upload = multer({ storage: storage });
 
@@ -81,6 +89,8 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                     let result;
                     if (mediaFile) {
                         const imageData = fs.readFileSync(mediaFile.path, { encoding: 'base64' });
+                        // const resizedImage = await resizeImage(mediaFile.path);
+                        // const imageData = resizedImage.toString('base64');
                         result = await model.generateContent([prompt, {
                             inlineData: {
                                 data: imageData,
