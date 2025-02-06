@@ -43,8 +43,6 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                     const messages: ChatCompletionMessageParam[] = [];
                     
                     if (mediaFile) {
-                        const tempFilePath = `/tmp/${mediaFile.filename}`;
-                        fs.renameSync(mediaFile.path, tempFilePath);
                         const imageData = fs.readFileSync(mediaFile.path, { encoding: 'base64' });
                         messages.push({
                             role: 'user',
@@ -82,8 +80,6 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                     
                     let result;
                     if (mediaFile) {
-                        const tempFilePath = `/tmp/${mediaFile.filename}`;
-                        fs.renameSync(mediaFile.path, tempFilePath);
                         const imageData = fs.readFileSync(mediaFile.path, { encoding: 'base64' });
                         result = await model.generateContent([prompt, {
                             inlineData: {
@@ -113,8 +109,6 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                             throw new Error('Invalid image format. Supported formats are: JPEG, PNG, GIF, and WebP');
                         }
 
-                        const tempFilePath = `/tmp/${mediaFile.filename}`;
-                        fs.renameSync(mediaFile.path, tempFilePath);
                         const base64Image = fs.readFileSync(mediaFile.path, { encoding: 'base64' });
                         messages.push({
                             role: 'user',
