@@ -31,7 +31,7 @@ jobs:
 
     - name: Deploy to Cloud Storage
       run: |
-        gsutil -m rsync -r ./frontend/dist gs://subman
+        gsutil -m rsync -r ./frontend/dist gs://subman-frontend
 
     - name: Invalidate CDN Cache
       run: |
