@@ -16,8 +16,6 @@ export const ResponseColumn: React.FC<ResponseColumnProps> = ({ data }) => {
                 return 'from-srh-orange to-srh-orange/80';
             case 'Claude':
                 return 'from-srh-blue-light to-srh-blue-light/80';
-            case 'DeepSeek':
-                return 'from-srh-orange to-srh-orange/80';
             default:
                 return 'from-gray-500 to-gray-600';
         }

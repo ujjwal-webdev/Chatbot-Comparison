@@ -13,7 +13,6 @@ export default function App() {
         { model: 'ChatGPT', response: '', loading: false },
         { model: 'Gemini', response: '', loading: false },
         { model: 'Claude', response: '', loading: false },
-        { model: 'DeepSeek', response: '', loading: false }
     ]);
 
     const handleSubmit = async (prompt: string, image: File | null) => {
@@ -46,7 +45,7 @@ export default function App() {
                     <ChatForm onSubmit={handleSubmit} />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {responses.map((response, index) => (
                         <ResponseColumn 
                             key={`${response.model}-${index}`} 

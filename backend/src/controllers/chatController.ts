@@ -3,7 +3,7 @@ import { openai, genAI, anthropic } from '../config/ai.config';
 import { ChatCompletionContentPart, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages';
 import fs from 'fs';
-import OpenAI from "openai";
+import multer from 'multer';
 
 interface ChatRequest extends Request {
     file?: Express.Multer.File;
@@ -15,6 +15,17 @@ const isValidClaudeMediaType = (mediaType: string): mediaType is ClaudeMediaType
     return ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType);
 };
 
+const storage = multer.diskStorage({
+    destination: function(_req, _file, cb) {
+        cb(null,'/tmp/');
+    },
+    filename: function(_req, file, cb) {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+})
+
+export const upload = multer({ storage: storage });
+
 export const handleChat = async (req: ChatRequest, res: Response): Promise<void> => {
     const { prompt } = req.body;
     const mediaFile = req.file;
@@ -22,7 +33,6 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
     let chatgptResponse = '';
     let geminiResponse = '';
     let claudeResponse = '';
-    let deepSeekResponse = '';
 
     try {
         // Process requests in parallel
@@ -33,6 +43,8 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                     const messages: ChatCompletionMessageParam[] = [];
                     
                     if (mediaFile) {
+                        const tempFilePath = `/tmp/${mediaFile.filename}`;
+                        fs.renameSync(mediaFile.path, tempFilePath);
                         const imageData = fs.readFileSync(mediaFile.path, { encoding: 'base64' });
                         messages.push({
                             role: 'user',
@@ -70,6 +82,8 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                     
                     let result;
                     if (mediaFile) {
+                        const tempFilePath = `/tmp/${mediaFile.filename}`;
+                        fs.renameSync(mediaFile.path, tempFilePath);
                         const imageData = fs.readFileSync(mediaFile.path, { encoding: 'base64' });
                         result = await model.generateContent([prompt, {
                             inlineData: {
@@ -99,6 +113,8 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                             throw new Error('Invalid image format. Supported formats are: JPEG, PNG, GIF, and WebP');
                         }
 
+                        const tempFilePath = `/tmp/${mediaFile.filename}`;
+                        fs.renameSync(mediaFile.path, tempFilePath);
                         const base64Image = fs.readFileSync(mediaFile.path, { encoding: 'base64' });
                         messages.push({
                             role: 'user',
@@ -136,39 +152,20 @@ export const handleChat = async (req: ChatRequest, res: Response): Promise<void>
                     errors.claude = error instanceof Error ? error.message : 'Unknown error';
                 }
             })(),
-
-            // DeepSeek
-            (async () => {
-                try {
-                    const deepSeek = new OpenAI({
-                        baseURL: 'https://api.deepseek.com',
-                        apiKey: process.env.DEEPSEEK_API_KEY
-                });
-                
-                    const completion = await deepSeek.chat.completions.create({
-                        messages: [{ role: "system", content: "You are a helpful assistant." }],
-                        model: "deepseek-chat",
-                    });
-
-                    deepSeekResponse = completion.choices[0]?.message?.content || '';
-                    console.log(deepSeekResponse);
-                } catch (error) {
-                    console.error('DeepSeek Error:', error);
-                    errors.deepSeek = error instanceof Error ? error.message : 'Unknown error';
-                }
-            })()
         ]);
 
         // Clean up the uploaded file
-        if (mediaFile && fs.existsSync(mediaFile.path)) {
-            fs.unlinkSync(mediaFile.path);
+        if (mediaFile) {
+            const tempFilePath = `/tmp/${mediaFile.filename}`;
+            if (fs.existsSync(tempFilePath)) {
+                fs.unlinkSync(tempFilePath);
+            }
         }
 
         res.json({
             chatgpt: chatgptResponse,
             gemini: geminiResponse,
             claude: claudeResponse,
-            deepSeek: deepSeekResponse,
             errors: Object.keys(errors).length > 0 ? errors : undefined
         });
     } catch (error) {
