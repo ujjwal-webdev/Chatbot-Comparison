@@ -1,0 +1,49 @@
+name: Deploy Frontend (Firebase Hosting)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "firebase.json"
+      - ".github/workflows/gcp-deploy-frontend-firebase-hosting.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      VITE_API_URL: ${{ vars.VITE_API_URL }}
+      VITE_REQUEST_TIMEOUT_MS: ${{ vars.VITE_REQUEST_TIMEOUT_MS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install and build
+        working-directory: frontend
+        run: |
+          npm ci
+          VITE_API_URL="${VITE_API_URL}" VITE_REQUEST_TIMEOUT_MS="${VITE_REQUEST_TIMEOUT_MS}" npm run build
+
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Deploy to Firebase Hosting
+        run: npx --yes firebase-tools@latest deploy --only hosting --project "${PROJECT_ID}" --non-interactive
+

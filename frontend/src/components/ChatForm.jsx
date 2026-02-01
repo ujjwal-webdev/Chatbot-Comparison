@@ -1,22 +1,26 @@
-import React, { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Send, Image as ImageIcon, X, AlertCircle } from 'lucide-react';
-
-interface ChatFormProps {
-    onSubmit: (prompt: string, image: File | null) => Promise<void>;
-}
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-export const ChatForm: React.FC<ChatFormProps> = ({ onSubmit }) => {
+export const ChatForm = ({ onSubmit }) => {
     const [prompt, setPrompt] = useState('');
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [error, setError] = useState(null);
+    const fileInputRef = useRef(null);
 
-    const validateFile = (file: File): string | null => {
+    useEffect(() => {
+        return () => {
+            if (imagePreview && typeof imagePreview === 'string' && imagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(imagePreview);
+            }
+        };
+    }, [imagePreview]);
+
+    const validateFile = (file) => {
         if (!ALLOWED_TYPES.includes(file.type)) {
             return 'Please upload a valid image file (JPEG, PNG, GIF, or WebP)';
         }
@@ -26,7 +30,7 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onSubmit }) => {
         return null;
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (e) => {
         const file = e.target.files?.[0];
         setError(null);
 
@@ -41,18 +45,20 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onSubmit }) => {
             }
 
             setSelectedImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            if (imagePreview && typeof imagePreview === 'string' && imagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(imagePreview);
+            }
+            setImagePreview(URL.createObjectURL(file));
         } else {
             setSelectedImage(null);
+            if (imagePreview && typeof imagePreview === 'string' && imagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(imagePreview);
+            }
             setImagePreview(null);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!prompt && !selectedImage) return;
 
@@ -62,12 +68,15 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onSubmit }) => {
             await onSubmit(prompt, selectedImage);
             setPrompt('');
             setSelectedImage(null);
+            if (imagePreview && typeof imagePreview === 'string' && imagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(imagePreview);
+            }
             setImagePreview(null);
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
         } catch (err) {
-            setError('Failed to send message. Please try again.');
+            setError(err?.message || 'Failed to send message. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -75,6 +84,9 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onSubmit }) => {
 
     const removeImage = () => {
         setSelectedImage(null);
+        if (imagePreview && typeof imagePreview === 'string' && imagePreview.startsWith('blob:')) {
+            URL.revokeObjectURL(imagePreview);
+        }
         setImagePreview(null);
         setError(null);
         if (fileInputRef.current) {
@@ -145,4 +157,4 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onSubmit }) => {
             </div>
         </form>
     );
-}; 
+};

@@ -1,31 +1,17 @@
-# First stage: Build TypeScript inside a Node.js container
-FROM --platform=linux/amd64 node:18-bullseye AS builder
+FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json first (leveraging Docker layer caching)
-COPY package*.json ./
+# Install dependencies first (better layer caching)
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
-# Install dependencies
-RUN npm install
+# Copy app source
+COPY src ./src
 
-# Copy the rest of the application code
-COPY . .
+ENV NODE_ENV=production
 
-# Compile TypeScript
-RUN npm run build
+# Cloud Run sets PORT (ctypically 8080)
+EXPOSE 8080
 
-# Second stage: Use a minimal runtime environment
-FROM --platform=linux/amd64 node:18-bullseye
-
-WORKDIR /app
-
-# Copy only built files and production dependencies from the builder stage
-COPY --from=builder /app/dist /app/dist
-COPY --from=builder /app/node_modules /app/node_modules
-COPY --from=builder /app/package.json /app/package.json
-
-# Expose the application port
-EXPOSE 3000
-
-CMD ["node", "dist/index.js"]
+CMD ["node", "src/index.js"]

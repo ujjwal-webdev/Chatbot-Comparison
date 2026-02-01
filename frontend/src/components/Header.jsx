@@ -1,7 +1,6 @@
-import React from 'react';
 import { Sparkles } from 'lucide-react';
 
-export const Header: React.FC = () => {
+export const Header = () => {
     return (
         <header className="bg-white shadow-sm border-b border-srh-blue/10">
             <div className="max-w-7xl mx-auto px-4 py-4">
@@ -20,4 +19,4 @@ export const Header: React.FC = () => {
             </div>
         </header>
     );
-}; 
+};
