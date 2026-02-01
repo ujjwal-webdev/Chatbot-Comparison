@@ -37,7 +37,7 @@ jobs:
       - name: Write Cloud Run env vars file
         shell: bash
         run: |
-          cat > env.yaml <<'EOF'
+          cat > env.yaml <<EOF
           NODE_ENV: "production"
           ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
           JSON_BODY_LIMIT: "1mb"
