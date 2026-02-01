@@ -5,6 +5,51 @@ const isValidImageMediaType = (mediaType) => {
     return ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType);
 };
 
+const toCleanString = (value) => {
+    if (typeof value === 'string') return value;
+    if (value instanceof Error) return value.message;
+    try {
+        return JSON.stringify(value);
+    } catch {
+        return String(value);
+    }
+};
+
+const truncate = (s, max = 220) => {
+    const str = String(s || '');
+    if (str.length <= max) return str;
+    return `${str.slice(0, max)}...`;
+};
+
+const sanitizeProviderErrorForClient = (err, isProd) => {
+    const raw = toCleanString(err).replace(/\s+/g, ' ').trim();
+    const status = typeof err?.status === 'number' ? err.status : undefined;
+    const msg = status && !raw.includes(String(status)) ? `${status} ${raw}` : raw;
+    const lower = msg.toLowerCase();
+
+    // In production, only surface safe, high-signal messages.
+    if (isProd) {
+        // Billing/credits/quota are safe and useful to show to users.
+        if (
+            lower.includes('402') ||
+            lower.includes('payment required') ||
+            lower.includes('insufficient') ||
+            lower.includes('credit') ||
+            lower.includes('quota') ||
+            lower.includes('429') ||
+            lower.includes('rate limit') ||
+            lower.includes('401') ||
+            lower.includes('invalid api key') ||
+            lower.includes('authentication')
+        ) {
+            return truncate(msg);
+        }
+        return 'Request failed';
+    }
+
+    return truncate(msg, 1000);
+};
+
 const withTimeout = async (promise, ms, label) => {
     let timeoutId;
     const timeoutPromise = new Promise((_, reject) => {
@@ -85,7 +130,7 @@ export const handleChat = async (req, res) => {
                     chatgptResponse = completion.choices[0]?.message?.content || '';
                 } catch (error) {
                     console.error('ChatGPT Error:', error);
-                    errors.chatgpt = isProd ? 'ChatGPT request failed' : (error instanceof Error ? error.message : 'Unknown error');
+                    errors.chatgpt = sanitizeProviderErrorForClient(error, isProd);
                 }
             })(),
 
@@ -105,7 +150,7 @@ export const handleChat = async (req, res) => {
                     geminiResponse = completion.choices[0]?.message?.content || '';
                 } catch (error) {
                     console.error('Gemini Error:', error);
-                    errors.gemini = isProd ? 'Gemini request failed' : (error instanceof Error ? error.message : 'Unknown error');
+                    errors.gemini = sanitizeProviderErrorForClient(error, isProd);
                 }
             })(),
 
@@ -125,7 +170,7 @@ export const handleChat = async (req, res) => {
                     claudeResponse = response.choices[0]?.message?.content || '';
                 } catch (error) {
                     console.error('Claude Error:', error);
-                    errors.claude = isProd ? 'Claude request failed' : (error instanceof Error ? error.message : 'Unknown error');
+                    errors.claude = sanitizeProviderErrorForClient(error, isProd);
                 }
             })(),
         ]);

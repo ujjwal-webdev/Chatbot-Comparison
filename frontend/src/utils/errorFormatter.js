@@ -6,6 +6,22 @@ export const formatErrorMessage = (error, model) => {
 
     const errorLower = error.toLowerCase();
 
+    // OpenRouter / billing / credits (applies to any model when routed via OpenRouter)
+    if (
+        errorLower.includes('402') ||
+        errorLower.includes('payment required') ||
+        errorLower.includes('insufficient') ||
+        errorLower.includes('credit')
+    ) {
+        return {
+            title: 'Billing / Credits Required',
+            message: 'Your OpenRouter account appears to have insufficient credits to run this request.',
+            suggestion: 'Add credits in OpenRouter or switch to a provider/key that has an active billing plan.',
+            link: 'https://openrouter.ai/settings/credits',
+            type: 'billing'
+        };
+    }
+
     // ChatGPT Errors
     if (model === 'ChatGPT') {
         if (errorLower.includes('429') || errorLower.includes('quota') || errorLower.includes('exceeded')) {
